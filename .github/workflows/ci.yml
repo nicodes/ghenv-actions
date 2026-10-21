@@ -16,7 +16,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
-          go-version: '1.25.x'
+          go-version: '1.27.3'
           cache: false
       - name: Check scripts and workflow syntax
         run: |
@@ -31,7 +31,8 @@ jobs:
         id: handoff
         uses: ./
         with:
-          preview-bundle: ${{ steps.probe.outputs.bundle }}
+          preview-bundle: >-
+            ${{ format('{{"version":1,"environment":"Preview","repository":{0},"secrets":{{"TOKEN":{1}}},"variables":{{"URL":{2}}}}}', toJSON(github.repository), toJSON(fromJSON(steps.probe.outputs.bundle).secrets.TOKEN), toJSON(fromJSON(steps.probe.outputs.bundle).variables.URL)) }}
           request-id: ${{ steps.probe.outputs.request-id }}
           public-key: ${{ steps.probe.outputs.public-key }}
           secret-names: TOKEN
