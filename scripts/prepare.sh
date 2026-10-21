@@ -13,6 +13,10 @@ state_dir="$(mktemp -d "$RUNNER_TEMP/ghenv-action.XXXXXXXX")"
 trap 'rm -rf -- "$state_dir"' ERR
 printf 'state-dir=%s\n' "$state_dir" >> "$GITHUB_OUTPUT"
 mkdir "$state_dir/bin"
-# A version-qualified install ignores the consumer's module/workspace. There
-# is deliberately no input for changing the source repository or revision.
-GOBIN="$state_dir/bin" GOWORK=off GOFLAGS= go install "github.com/nicodes/ghenv@$source_commit"
+# Fetch the exact commit into a private directory, independent of both the
+# consumer workspace and the exporter's default branch/release state.
+git init --quiet "$state_dir/source"
+git -C "$state_dir/source" fetch --quiet --depth=1 https://github.com/nicodes/ghenv.git "$source_commit"
+git -C "$state_dir/source" checkout --quiet --detach FETCH_HEAD
+[[ "$(git -C "$state_dir/source" rev-parse HEAD)" == "$source_commit" ]] || { echo 'Exporter commit mismatch' >&2; exit 1; }
+GOWORK=off GOFLAGS= go -C "$state_dir/source" build -mod=readonly -trimpath -o "$state_dir/bin/ghenv" .
