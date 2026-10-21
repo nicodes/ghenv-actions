@@ -29,7 +29,7 @@ ghenv run --repo OWNER/PROJECT --secrets API_KEY --vars API_BASE_URL -- npm run 
 
 No checkout of application code is needed in the handoff job. The action builds
 the exporter from the fixed Go source commit in [ghenv-source](ghenv-source)
-using a version-qualified `go install`. It does not build the calling project's
+using an isolated Git fetch, commit verification, and build. It does not build the calling project's
 code or accept a caller-selected exporter version. Updating the action's full
 commit pin is an explicit trust decision; review changes to its Go source pin too.
 
