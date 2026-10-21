@@ -2,7 +2,7 @@ name: ghenv Preview handoff
 description: Encrypt approved Preview bundle entries for a local ghenv process
 inputs:
   environment:
-    description: Must be Preview; the calling job must also use environment Preview
+    description: Must be Preview; caller selects the approved Preview credential source
     default: Preview
   preview-bundle:
     description: Owner-curated GHENV_PREVIEW_BUNDLE secret for the calling repository
@@ -32,7 +32,7 @@ runs:
     - name: Set up Go
       uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
       with:
-        go-version: '1.25.x'
+        go-version: '1.27.3'
         cache: false
     - name: Build pinned exporter before exposing the bundle
       id: prepare

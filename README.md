@@ -16,11 +16,11 @@ action runs in the project's GitHub Actions job and uploads only ciphertext.
 
 ## Project setup
 
-1. Create the project's `Preview` environment and configure its protection rules.
-2. Add the owner-curated `GHENV_PREVIEW_BUNDLE` secret described below.
+1. Select the existing `Preview` environment, or use the explicit repository development-bundle mode below.
+2. Select only the development values to export, using one of the examples below.
 3. Copy [examples/ghenv.yml](examples/ghenv.yml) to `.github/workflows/ghenv.yml`
    in that project. Replace `FULL_ACTION_COMMIT_SHA` with a reviewed action
-   commit. Keep the job fixed to `environment: Preview`.
+   commit. For environment-backed values, keep the job fixed to `environment: Preview`.
 4. Install the workflow on the project's default branch for normal use, then run:
 
 ```sh
@@ -37,6 +37,32 @@ The action requires a Linux runner with Bash and network access to GitHub/Go
 module services. It installs Go with a pinned GitHub-owned setup action. The
 provided workflow uses a fresh GitHub-hosted runner and `contents: read`.
 The local CLI needs Actions read/write for dispatch and artifact deletion.
+
+## Existing Preview entries
+
+[examples/ghenv-existing-preview.yml](examples/ghenv-existing-preview.yml) reuses
+individual secrets and variables from an existing `Preview` environment. The
+workflow constructs the versioned bundle in memory with `format` and `toJSON`
+for each explicitly named value. JSON escaping preserves quotes, newlines and
+Unicode. It never serializes the complete `secrets` or `vars` context. Change
+the literal map keys and matching context references together when choosing the
+allowlist. The action exposes the constructed bundle only to its encryption step.
+No extra copy of the credentials needs to be provisioned.
+
+GitHub's merged secret context can fall back to repository/organization entries;
+maintainers must ensure the selected names resolve to development values.
+The Preview label cannot prove a credential's scope. Do not include deployment,
+backup, production database or production provider credentials in the allowlist.
+
+## Repository development-bundle mode
+
+GitHub Free does not support environment secrets in private repositories.
+[examples/ghenv-repository-bundle.yml](examples/ghenv-repository-bundle.yml)
+therefore omits the job's GitHub environment and consumes a repository-level
+`GHENV_PREVIEW_BUNDLE` reserved for development. Its logical environment remains
+`Preview`; this mode does not provide GitHub environment approval protection.
+Use it explicitly instead of assuming an unavailable environment boundary.
+See [GitHub's environment availability](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments).
 
 ## Preview bundle
 
@@ -61,7 +87,7 @@ is checked against the runner's `GITHUB_REPOSITORY`, not a dispatch input.
 
 This bundle is the complete owner-approved export allowlist. Dispatchers who
 obtain required environment approval may select any entry in it, including
-through direct GitHub API calls. Standalone Actions entries are not imported.
+through direct GitHub API calls. Standalone Actions entries are imported only when explicitly assembled by the workflow as shown above.
 Pass only this fixed secret; never pass `toJSON(secrets)` or inherit an entire
 secret context.
 
@@ -76,7 +102,7 @@ labels as Preview. Restrict bundle, workflow, and action maintainers accordingly
 
 | Input | Purpose |
 | --- | --- |
-| `environment` | Defaults to `Preview`; other values are rejected. The caller must also fix its job's environment to Preview. |
+| `environment` | Defaults to `Preview`; other values are rejected. The caller fixes either the Preview environment or the explicit repository development-bundle source. |
 | `preview-bundle` | The fixed `GHENV_PREVIEW_BUNDLE` secret. Required. |
 | `public-key` | CLI-generated ephemeral RSA public key, base64 DER. Required. |
 | `request-id` | CLI-generated 32-character lowercase hexadecimal identifier. Required. |
@@ -103,7 +129,7 @@ and fresh runners; the action is not a sandbox for other steps in its job.
 
 ## Verification
 
-CI runs the real composite action with synthetic data, downloads its artifact,
+CI constructs an explicitly allowlisted bundle with GitHub expressions from synthetic values, runs the real composite action, downloads its artifact,
 and independently decrypts it to check exact values and exclusion of unrequested
 entries. A second invocation rejects a Production-marked bundle and checks that
 no artifact was uploaded and temporary state was removed. Script tests cover
