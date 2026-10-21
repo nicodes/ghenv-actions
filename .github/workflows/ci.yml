@@ -1,0 +1,77 @@
+name: CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.25.x'
+          cache: false
+      - name: Check scripts and workflow syntax
+        run: |
+          python3 -m unittest discover -s tests -p 'test_*.py'
+          bash -n scripts/prepare.sh scripts/cleanup.sh
+          go vet ./tests/probe.go
+          go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
+      - name: Generate synthetic test inputs
+        id: probe
+        run: go run ./tests/probe.go prepare
+      - name: Run reusable action
+        id: handoff
+        uses: ./
+        with:
+          preview-bundle: ${{ steps.probe.outputs.bundle }}
+          request-id: ${{ steps.probe.outputs.request-id }}
+          public-key: ${{ steps.probe.outputs.public-key }}
+          secret-names: TOKEN
+          variable-names: URL
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          artifact-ids: ${{ steps.handoff.outputs.artifact-id }}
+          path: ${{ runner.temp }}/ghenv-downloaded
+          merge-multiple: true
+      - name: Decrypt and verify exact selected values
+        env:
+          TEST_REQUEST_ID: ${{ steps.probe.outputs.request-id }}
+        run: go run ./tests/probe.go verify
+      - name: Reject a Production-marked fallback bundle
+        id: rejected
+        continue-on-error: true
+        uses: ./
+        with:
+          preview-bundle: ${{ steps.probe.outputs.production-bundle }}
+          request-id: ffffffffffffffffffffffffffffffff
+          public-key: ${{ steps.probe.outputs.public-key }}
+          secret-names: TOKEN
+      - name: Verify failure, no rejected artifact, and temporary cleanup
+        env:
+          OUTCOME: ${{ steps.rejected.outcome }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$OUTCOME" = failure
+          if compgen -G "$RUNNER_TEMP/ghenv-action.*" > /dev/null; then
+            echo 'Temporary action state survived cleanup' >&2
+            exit 1
+          fi
+          count="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --jq '[.artifacts[] | select(.name == "ghenv-ffffffffffffffffffffffffffffffff")] | length')"
+          test "$count" = 0
+      - name: Delete synthetic ciphertext artifact
+        if: always() && steps.handoff.outputs.artifact-id != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.handoff.outputs.artifact-id }}
+        run: gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID"
+      - name: Remove synthetic test private key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/ghenv-synthetic-private.der"
