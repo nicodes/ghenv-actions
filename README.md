@@ -1,4 +1,4 @@
-<!-- Generated from private documentation source. Do not edit directly. Source SHA256: b65ad6f4ca676529e7e7672530e9a32181a80084385734cfec7f5275f245d4e5 -->
+<!-- Generated from private documentation source. Do not edit directly. Source SHA256: a8b57a1f4c41baa3c0875f49e6c2568b803a73d9df360ad30739a92dffef8836 -->
 
 # ghenv-actions
 
@@ -145,4 +145,4 @@ go vet ./tests/probe.go
 
 ## Repository development
 
-Install the [Komizo release](https://github.com/nicodes/komizo#install) matching `komizo.lock`, then run `komizo check`. The GitHub workflow additionally verifies a real synthetic encrypted artifact exchange and cleanup without accessing development credentials.
+Install the [komizo release](https://github.com/nicodes/komizo#install) matching `komizo.lock`, then run `komizo check`. The GitHub workflow additionally verifies a real synthetic encrypted artifact exchange and cleanup without accessing development credentials.
