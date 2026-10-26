@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "recipe": "configuration",
+  "repository": "nicodes/ghenv-actions",
+  "tools": {
+    "go": "1.27.3",
+    "actionlint": "1.7.12",
+    "shellcheck": "0.11.0"
+  },
+  "stages": {
+    "lint": [
+      [
+        "bash",
+        "-n",
+        "scripts/prepare.sh",
+        "scripts/cleanup.sh"
+      ],
+      [
+        "go",
+        "vet",
+        "tests/probe.go"
+      ],
+      [
+        "actionlint"
+      ],
+      [
+        "shellcheck",
+        "scripts/prepare.sh",
+        "scripts/cleanup.sh"
+      ]
+    ],
+    "unit": [
+      [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test_*.py"
+      ]
+    ]
+  },
+  "validation": {
+    "workflow": {
+      "required": [
+        "ci.yml",
+        "dependency-policy.yml"
+      ],
+      "ci_gates": [
+        "Test"
+      ]
+    }
+  }
+}
