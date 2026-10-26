@@ -1,4 +1,4 @@
-name: Ghenv Preview handoff
+name: ghenv Preview handoff
 description: Encrypt approved Preview bundle entries for a local ghenv process
 inputs:
   environment:
