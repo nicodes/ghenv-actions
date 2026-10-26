@@ -1,4 +1,4 @@
-name: ghenv Preview handoff
+name: Ghenv Preview handoff
 description: Encrypt approved Preview bundle entries for a local ghenv process
 inputs:
   environment:
@@ -55,7 +55,7 @@ runs:
       run: |
         umask 077
         "$GHENV_STATE_DIR/bin/ghenv" seal > "$GHENV_STATE_DIR/payload.json"
-    - name: Upload ciphertext
+    - name: Upload artifacts
       id: upload
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       with:

@@ -1,78 +1,115 @@
-name: CI
-on:
-  push:
+name: Build & Test
+'on':
   pull_request:
+    types:
+    - opened
+    - synchronize
+    - reopened
+    - ready_for_review
+  push:
+    branches:
+    - main
+  workflow_dispatch: null
 permissions:
   contents: read
+  attestations: read
 jobs:
-  integration:
-    runs-on: ubuntu-latest
+  ci:
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       actions: write
+      attestations: read
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          persist-credentials: false
-      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
-        with:
-          go-version: '1.27.3'
-          cache: false
-      - name: Check scripts and workflow syntax
-        run: |
-          python3 -m unittest discover -s tests -p 'test_*.py'
-          bash -n scripts/prepare.sh scripts/cleanup.sh
-          go vet ./tests/probe.go
-          go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
-      - name: Generate synthetic test inputs
-        id: probe
-        run: go run ./tests/probe.go prepare
-      - name: Run reusable action
-        id: handoff
-        uses: ./
-        with:
-          preview-bundle: >-
-            ${{ format('{{"version":1,"environment":"Preview","repository":{0},"secrets":{{"TOKEN":{1}}},"variables":{{"URL":{2}}}}}', toJSON(github.repository), toJSON(fromJSON(steps.probe.outputs.bundle).secrets.TOKEN), toJSON(fromJSON(steps.probe.outputs.bundle).variables.URL)) }}
-          request-id: ${{ steps.probe.outputs.request-id }}
-          public-key: ${{ steps.probe.outputs.public-key }}
-          secret-names: TOKEN
-          variable-names: URL
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          artifact-ids: ${{ steps.handoff.outputs.artifact-id }}
-          path: ${{ runner.temp }}/ghenv-downloaded
-          merge-multiple: true
-      - name: Decrypt and verify exact selected values
-        env:
-          TEST_REQUEST_ID: ${{ steps.probe.outputs.request-id }}
-        run: go run ./tests/probe.go verify
-      - name: Reject a Production-marked fallback bundle
-        id: rejected
-        continue-on-error: true
-        uses: ./
-        with:
-          preview-bundle: ${{ steps.probe.outputs.production-bundle }}
-          request-id: ffffffffffffffffffffffffffffffff
-          public-key: ${{ steps.probe.outputs.public-key }}
-          secret-names: TOKEN
-      - name: Verify failure, no rejected artifact, and temporary cleanup
-        env:
-          OUTCOME: ${{ steps.rejected.outcome }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          test "$OUTCOME" = failure
-          if compgen -G "$RUNNER_TEMP/ghenv-action.*" > /dev/null; then
-            echo 'Temporary action state survived cleanup' >&2
-            exit 1
-          fi
-          count="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --jq '[.artifacts[] | select(.name == "ghenv-ffffffffffffffffffffffffffffffff")] | length')"
-          test "$count" = 0
-      - name: Delete synthetic ciphertext artifact
-        if: always() && steps.handoff.outputs.artifact-id != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
-        env:
-          GH_TOKEN: ${{ github.token }}
-          ARTIFACT_ID: ${{ steps.handoff.outputs.artifact-id }}
-        run: gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID"
-      - name: Remove synthetic test private key
-        if: always()
-        run: rm -f "$RUNNER_TEMP/ghenv-synthetic-private.der"
+    - name: Check out source
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+    - name: Set up locked Komizo
+      uses: nicodes/komizo/setup@6458b3e1328805b485c91ba1f09211f5bd45431b
+      env:
+        GH_TOKEN: ${{ github.token }}
+      timeout-minutes: 5
+    - name: Record tested integration identity
+      if: github.event_name == 'pull_request'
+      env:
+        EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+      run: |
+        komizo exec --tools python -- bash -euo pipefail <<'KOMIZO_COMMAND'
+        python3 "$CICD_ENGINEERING/helpers/integration-identity.py"
+        KOMIZO_COMMAND
+    - name: Upload artifacts
+      if: github.event_name == 'pull_request'
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      with:
+        name: fleet-integration-${{ github.run_id }}-${{ github.run_attempt }}
+        path: .artifacts/fleet-integration.json
+        if-no-files-found: error
+        retention-days: 7
+        include-hidden-files: true
+    - name: Check project
+      uses: nicodes/komizo/run@6458b3e1328805b485c91ba1f09211f5bd45431b
+      with:
+        target: check
+    - name: Generate synthetic test inputs
+      id: probe
+      run: komizo exec --tools go -- go run ./tests/probe.go prepare
+    - name: Run reusable action
+      id: handoff
+      uses: ./
+      with:
+        preview-bundle: ${{ format('{{"version":1,"environment":"Preview","repository":{0},"secrets":{{"TOKEN":{1}}},"variables":{{"URL":{2}}}}}',
+          toJSON(github.repository), toJSON(fromJSON(steps.probe.outputs.bundle).secrets.TOKEN), toJSON(fromJSON(steps.probe.outputs.bundle).variables.URL))
+          }}
+        request-id: ${{ steps.probe.outputs.request-id }}
+        public-key: ${{ steps.probe.outputs.public-key }}
+        secret-names: TOKEN
+        variable-names: URL
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+      with:
+        artifact-ids: ${{ steps.handoff.outputs.artifact-id }}
+        path: ${{ runner.temp }}/ghenv-downloaded
+        merge-multiple: true
+      name: Download artifacts
+    - name: Decrypt and verify exact selected values
+      env:
+        TEST_REQUEST_ID: ${{ steps.probe.outputs.request-id }}
+      run: komizo exec --tools go -- go run ./tests/probe.go verify
+    - name: Reject a Production-marked fallback bundle
+      id: rejected
+      continue-on-error: true
+      uses: ./
+      with:
+        preview-bundle: ${{ steps.probe.outputs.production-bundle }}
+        request-id: ffffffffffffffffffffffffffffffff
+        public-key: ${{ steps.probe.outputs.public-key }}
+        secret-names: TOKEN
+    - name: Verify failure, no rejected artifact, and temporary cleanup
+      env:
+        OUTCOME: ${{ steps.rejected.outcome }}
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        test "$OUTCOME" = failure
+        if compgen -G "$RUNNER_TEMP/ghenv-action.*" > /dev/null; then
+          echo 'Temporary action state survived cleanup' >&2
+          exit 1
+        fi
+        count="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --jq '[.artifacts[] | select(.name == "ghenv-ffffffffffffffffffffffffffffffff")] | length')"
+        test "$count" = 0
+    - name: Delete synthetic ciphertext artifact
+      if: always() && steps.handoff.outputs.artifact-id != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name
+        == github.repository)
+      env:
+        GH_TOKEN: ${{ github.token }}
+        ARTIFACT_ID: ${{ steps.handoff.outputs.artifact-id }}
+      run: gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID"
+    - name: Remove synthetic test private key
+      if: always()
+      run: rm -f "$RUNNER_TEMP/ghenv-synthetic-private.der"
+    name: Test
+    timeout-minutes: 15
+    env:
+      MISE_GITHUB_TOKEN: ${{ github.token }}
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
