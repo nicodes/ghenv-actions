@@ -1,3 +1,5 @@
+<!-- Generated from private documentation source. Do not edit directly. Source SHA256: b65ad6f4ca676529e7e7672530e9a32181a80084385734cfec7f5275f245d4e5 -->
+
 # ghenv-actions
 
 Reusable GitHub Action for the encrypted Preview credential handoff used by
@@ -140,3 +142,7 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 bash -n scripts/prepare.sh scripts/cleanup.sh
 go vet ./tests/probe.go
 ```
+
+## Repository development
+
+Install the [Komizo release](https://github.com/nicodes/komizo#install) matching `komizo.lock`, then run `komizo check`. The GitHub workflow additionally verifies a real synthetic encrypted artifact exchange and cleanup without accessing development credentials.

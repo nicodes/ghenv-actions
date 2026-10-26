@@ -19,4 +19,4 @@ git init --quiet "$state_dir/source"
 git -C "$state_dir/source" fetch --quiet --depth=1 https://github.com/nicodes/ghenv.git "$source_commit"
 git -C "$state_dir/source" checkout --quiet --detach FETCH_HEAD
 [[ "$(git -C "$state_dir/source" rev-parse HEAD)" == "$source_commit" ]] || { echo 'Exporter commit mismatch' >&2; exit 1; }
-GOWORK=off GOFLAGS= go -C "$state_dir/source" build -mod=readonly -trimpath -o "$state_dir/bin/ghenv" .
+GOWORK=off GOFLAGS='' go -C "$state_dir/source" build -mod=readonly -trimpath -o "$state_dir/bin/ghenv" .
