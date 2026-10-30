@@ -5,18 +5,30 @@
 "shellcheck" = "0.11.0"
 
 [env]
-TOOLS_ROOT = "{{ get_env(name='TOOLS_ROOT', default=config_root ~ '/.ci-tools') }}"
-GOTOOLCHAIN = "local"
-PYTHONDONTWRITEBYTECODE = "1"
+"TOOLS_ROOT" = "{{ get_env(name='TOOLS_ROOT', default=config_root ~ '/.ci-tools') }}"
+"GOTOOLCHAIN" = "local"
+"PYTHONDONTWRITEBYTECODE" = "1"
 
 [tasks."lint"]
 run = ["bash -n scripts/prepare.sh scripts/cleanup.sh", "go vet tests/probe.go", "actionlint", "shellcheck scripts/prepare.sh scripts/cleanup.sh"]
 
 [tasks."unit"]
-run = ["python3 -m unittest discover -s tests -p 'test_*.py'"]
+run = "python3 \"$TOOLS_ROOT/helpers/verification.py\" test --name unit --artifact .artifacts/build -- mise run _unit"
 
 [tasks."test"]
-run = [{"task" = "unit"}]
+run = "python3 \"$TOOLS_ROOT/helpers/verification.py\" session --test unit -- mise run _test-stages"
 
 [tasks."check"]
+run = "python3 \"$TOOLS_ROOT/helpers/verification.py\" session --test unit -- mise run _check-stages"
+
+[tasks."_unit"]
+run = ["python3 -m unittest discover -s tests -p 'test_*.py'"]
+hide = true
+
+[tasks."_test-stages"]
+run = [{"task" = "unit"}]
+hide = true
+
+[tasks."_check-stages"]
 run = [{"task" = "lint"}, {"task" = "unit"}]
+hide = true
