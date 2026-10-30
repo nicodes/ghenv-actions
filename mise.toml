@@ -1,0 +1,22 @@
+[tools]
+"python" = "3.13.11"
+"go" = "1.27.3"
+"actionlint" = "1.7.12"
+"shellcheck" = "0.11.0"
+
+[env]
+TOOLS_ROOT = "{{ get_env(name='TOOLS_ROOT', default=config_root ~ '/.ci-tools') }}"
+GOTOOLCHAIN = "local"
+PYTHONDONTWRITEBYTECODE = "1"
+
+[tasks."lint"]
+run = ["bash -n scripts/prepare.sh scripts/cleanup.sh", "go vet tests/probe.go", "actionlint", "shellcheck scripts/prepare.sh scripts/cleanup.sh"]
+
+[tasks."unit"]
+run = ["python3 -m unittest discover -s tests -p 'test_*.py'"]
+
+[tasks."test"]
+run = [{"task" = "unit"}]
+
+[tasks."check"]
+run = [{"task" = "lint"}, {"task" = "unit"}]
