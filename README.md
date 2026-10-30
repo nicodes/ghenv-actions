@@ -1,4 +1,4 @@
-<!-- Generated from private documentation source. Do not edit directly. Source SHA256: 98a706716abf45c7441e90f9a95d29925ac9025bdd5a414f4bfd498d01c90e11 -->
+<!-- Generated from private documentation source. Do not edit directly. Source SHA256: 11db0fb7f5bccaf49318c6516e83b64bff529c443538b1d3ee2759ea314d7a42 -->
 
 # ghenv-actions
 
@@ -128,3 +128,14 @@ Local users, administrators, and the launched application can inspect injected
 values. Credentials developers must never read must stay behind a remote API.
 Browser-facing configuration remains public. Use reviewed workflow/action code
 and fresh runners; the action is not a sandbox for other steps in its job.
+
+For contributor verification, prepare the pinned helper source before running native tasks:
+
+```sh
+git clone https://github.com/nicodes/tools.git .ci-tools
+git -C .ci-tools checkout --detach f7e243524ce2aa29f299e4c79db33001f72f4a30
+mise install
+mise run check
+```
+
+Declared tests produce source evidence from the current verification session in `.artifacts/verification`.
