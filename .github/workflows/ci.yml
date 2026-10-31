@@ -51,7 +51,7 @@ jobs:
         mise run check
     - name: Generate synthetic test inputs
       id: probe
-      run: go run ./tests/probe.go prepare
+      run: target/debug/ghenv-action-probe prepare
     - name: Run reusable action
       id: handoff
       uses: ./
@@ -72,7 +72,7 @@ jobs:
     - name: Decrypt and verify exact selected values
       env:
         TEST_REQUEST_ID: ${{ steps.probe.outputs.request-id }}
-      run: go run ./tests/probe.go verify
+      run: target/debug/ghenv-action-probe verify
     - name: Reject a Production-marked fallback bundle
       id: rejected
       continue-on-error: true

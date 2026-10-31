@@ -1,4 +1,4 @@
-<!-- Generated from private documentation source. Do not edit directly. Source SHA256: 11db0fb7f5bccaf49318c6516e83b64bff529c443538b1d3ee2759ea314d7a42 -->
+<!-- Generated from private documentation source. Do not edit directly. Source SHA256: ff2fd45e3fa6d4b18931da09e6a71489a926eb480d91f242849a11776bc30633 -->
 
 # ghenv-actions
 
@@ -30,13 +30,12 @@ ghenv run --repo OWNER/PROJECT --secrets API_KEY --vars API_BASE_URL -- npm run 
 ```
 
 No checkout of application code is needed in the handoff job. The action builds
-the exporter from the fixed Go source commit in [ghenv-source](ghenv-source)
-using an isolated Git fetch, commit verification, and build. It does not build the calling project's
+the exporter from the fixed Rust source commit in [ghenv-source](ghenv-source)
+using an isolated Git fetch, commit verification, and locked Cargo build with private Cargo state. The build uses the selected toolchain binaries and drops inherited compiler hooks. It does not build the calling project's
 code or accept a caller-selected exporter version. Updating the action's full
-commit pin is an explicit trust decision; review changes to its Go source pin too.
+commit pin is an explicit trust decision; review changes to its Rust source pin too.
 
-The action requires a Linux runner with Bash and network access to GitHub/Go
-module services. It installs Go with a pinned GitHub-owned setup action. The
+The action requires a Linux runner with Bash and network access to GitHub and crates.io. It installs the pinned Rust 1.94.0 toolchain with Rustup. The
 provided workflow uses a fresh GitHub-hosted runner and `contents: read`.
 The local CLI needs Actions read/write for dispatch and artifact deletion.
 
@@ -84,7 +83,7 @@ Store a JSON object like this in the project's `Preview` environment as
 Both maps are required; use `{}` for an empty map. Entry values must be strings.
 Field names and repository casing must match exactly. Nulls, ambiguous or
 unknown schema fields, invalid names, NUL bytes, Production/foreign bundles,
-and names outside these maps are rejected by the Go exporter. The repository
+and names outside these maps are rejected by the Rust exporter. The repository
 is checked against the runner's `GITHUB_REPOSITORY`, not a dispatch input.
 
 This bundle is the complete owner-approved export allowlist. Dispatchers who
