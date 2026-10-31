@@ -1,18 +1,22 @@
 [tools]
 "python" = "3.13.11"
-"go" = "1.27.3"
+"rust" = "1.94.0"
 "actionlint" = "1.7.12"
 "shellcheck" = "0.11.0"
 
 [env]
 "TOOLS_ROOT" = "{{ get_env(name='TOOLS_ROOT', default=config_root ~ '/.ci-tools') }}"
-"GOTOOLCHAIN" = "local"
 "PYTHONDONTWRITEBYTECODE" = "1"
 
+[tasks."install"]
+run = ["rustup component add --toolchain 1.94.0 rustfmt clippy", "cargo fetch --locked"]
+
 [tasks."lint"]
-run = ["bash -n scripts/prepare.sh scripts/cleanup.sh", "go vet tests/probe.go", "actionlint", "shellcheck scripts/prepare.sh scripts/cleanup.sh"]
+depends = ["install"]
+run = ["bash -n scripts/prepare.sh scripts/cleanup.sh", "cargo fmt --check", "cargo clippy --locked --all-targets -- -D warnings", "actionlint", "shellcheck scripts/prepare.sh scripts/cleanup.sh"]
 
 [tasks."unit"]
+depends = ["install"]
 run = "python3 \"$TOOLS_ROOT/helpers/verification.py\" test --name unit --artifact .artifacts/build -- mise run _unit"
 
 [tasks."test"]
@@ -22,7 +26,7 @@ run = "python3 \"$TOOLS_ROOT/helpers/verification.py\" session --test unit -- mi
 run = "python3 \"$TOOLS_ROOT/helpers/verification.py\" session --test unit -- mise run _check-stages"
 
 [tasks."_unit"]
-run = ["python3 -m unittest discover -s tests -p 'test_*.py'"]
+run = ["cargo build --locked", "python3 -m unittest discover -s tests -p 'test_*.py'"]
 hide = true
 
 [tasks."_test-stages"]
@@ -30,5 +34,5 @@ run = [{"task" = "unit"}]
 hide = true
 
 [tasks."_check-stages"]
-run = [{"task" = "lint"}, {"task" = "unit"}]
+run = [{"task" = "install"}, {"task" = "lint"}, {"task" = "unit"}]
 hide = true

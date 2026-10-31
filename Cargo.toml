@@ -1,0 +1,18 @@
+[package]
+name = "ghenv-action-probe"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.94"
+publish = false
+autotests = false
+
+[[bin]]
+name = "ghenv-action-probe"
+path = "tests/probe.rs"
+
+[dependencies]
+aws-lc-rs = "1.19.0"
+base64 = "0.23.1"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+zeroize = "1.9.1"
