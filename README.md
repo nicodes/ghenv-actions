@@ -1,4 +1,4 @@
-<!-- Generated from private documentation source. Do not edit directly. Source SHA256: ff2fd45e3fa6d4b18931da09e6a71489a926eb480d91f242849a11776bc30633 -->
+<!-- Generated from private documentation source. Do not edit directly. Source SHA256: 0ddd4d2565e643b773e172d73025eb08dd3dd75d7e7059fe9b4b62cec0c39423 -->
 
 # ghenv-actions
 
@@ -138,3 +138,7 @@ mise run check
 ```
 
 Declared tests produce source evidence from the current verification session in `.artifacts/verification`.
+
+## Contributor task interface
+
+Contributor tool versions and task entry points live in the native Mise configuration. Use `mise run lint` for source checks, `mise run test` for the applicable behavioral tests, and `mise run check` for the complete supported gate. `mise run clean` removes declared generated outputs while preserving source, credentials and retained data. This package has no application development service.

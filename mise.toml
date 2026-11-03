@@ -36,3 +36,6 @@ hide = true
 [tasks."_check-stages"]
 run = [{"task" = "install"}, {"task" = "lint"}, {"task" = "unit"}]
 hide = true
+
+[tasks."clean"]
+run = "python3 \"$TOOLS_ROOT/helpers/clean.py\" --path .artifacts/build --path .artifacts/venv --path target"
