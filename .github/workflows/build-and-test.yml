@@ -37,6 +37,7 @@ jobs:
         set -euo pipefail
         python3 "$TOOLS_ROOT/helpers/source_policy.py" setup
         python3 "$TOOLS_ROOT/helpers/source_policy.py" workflows
+        .artifacts/sdk/source-policy/bin/python -I .github/scripts/check-workflow-examples.py
     - name: Record tested integration identity
       if: github.event_name == 'pull_request'
       env:
