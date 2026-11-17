@@ -1,4 +1,4 @@
-name: ghenv Preview handoff
+name: Preview handoff
 on:
   workflow_dispatch:
     inputs:
@@ -21,12 +21,13 @@ permissions:
   contents: read
 jobs:
   handoff:
+    name: Export
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    environment: Preview
     steps:
       # Replace FULL_ACTION_COMMIT_SHA with a reviewed 40-character commit.
-      - uses: nicodes/ghenv-actions@FULL_ACTION_COMMIT_SHA
+      - name: Export Preview bundle
+        uses: nicodes/ghenv-actions@FULL_ACTION_COMMIT_SHA
         with:
           environment: ${{ inputs.environment }}
           preview-bundle: ${{ secrets.GHENV_PREVIEW_BUNDLE }}

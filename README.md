@@ -1,4 +1,4 @@
-<!-- Generated from private documentation source. Do not edit directly. Source SHA256: 0ddd4d2565e643b773e172d73025eb08dd3dd75d7e7059fe9b4b62cec0c39423 -->
+<!-- Generated from private documentation source. Do not edit directly. Source SHA256: fd9ba2a41c5865d883bed4059cd609a2f9fc751634a1c110af0133ac5e2d08b7 -->
 
 # ghenv-actions
 
@@ -20,8 +20,8 @@ action runs in the project's GitHub Actions job and uploads only ciphertext.
 
 1. Select the existing `Preview` environment, or use the explicit repository development-bundle mode below.
 2. Select only the development values to export, using one of the examples below.
-3. Copy [examples/ghenv.yml](examples/ghenv.yml) to `.github/workflows/ghenv.yml`
-   in that project. Replace `FULL_ACTION_COMMIT_SHA` with a reviewed action
+3. Copy [examples/preview-handoff.yml](examples/preview-handoff.yml) to `.github/workflows/preview-handoff.yml`
+   in that project. Every alternative example below uses this same installed filename. Replace `FULL_ACTION_COMMIT_SHA` with a reviewed action
    commit. For environment-backed values, keep the job fixed to `environment: Preview`.
 4. Install the workflow on the project's default branch for normal use, then run:
 
@@ -41,7 +41,7 @@ The local CLI needs Actions read/write for dispatch and artifact deletion.
 
 ## Existing Preview entries
 
-[examples/ghenv-existing-preview.yml](examples/ghenv-existing-preview.yml) reuses
+[examples/existing-preview/preview-handoff.yml](examples/existing-preview/preview-handoff.yml) reuses
 individual secrets and variables from an existing `Preview` environment. The
 workflow constructs the versioned bundle in memory with `format` and `toJSON`
 for each explicitly named value. JSON escaping preserves quotes, newlines and
@@ -58,7 +58,7 @@ backup, production database or production provider credentials in the allowlist.
 ## Repository development-bundle mode
 
 GitHub Free does not support environment secrets in private repositories.
-[examples/ghenv-repository-bundle.yml](examples/ghenv-repository-bundle.yml)
+[examples/repository-bundle/preview-handoff.yml](examples/repository-bundle/preview-handoff.yml)
 therefore omits the job's GitHub environment and consumes a repository-level
 `GHENV_PREVIEW_BUNDLE` reserved for development. Its logical environment remains
 `Preview`; this mode does not provide GitHub environment approval protection.
@@ -132,7 +132,7 @@ For contributor verification, prepare the pinned helper source before running na
 
 ```sh
 git clone https://github.com/nicodes/tools.git .ci-tools
-git -C .ci-tools checkout --detach f7e243524ce2aa29f299e4c79db33001f72f4a30
+git -C .ci-tools checkout --detach 71540eb673ebd47162de3b78bb6ffbf77605d2ab
 mise install
 mise run check
 ```
