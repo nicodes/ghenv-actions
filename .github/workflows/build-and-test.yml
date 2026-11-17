@@ -26,10 +26,17 @@ jobs:
       with:
         persist-credentials: false
     - name: Set up development tools
-      uses: nicodes/tools/setup@a1c0321f3b4917a7e99eca42e241e46670f6e1e1
+      uses: nicodes/tools/setup@71540eb673ebd47162de3b78bb6ffbf77605d2ab
       env:
         GH_TOKEN: ${{ github.token }}
       timeout-minutes: 5
+    - name: Check workflow names
+      timeout-minutes: 3
+      shell: bash
+      run: |
+        set -euo pipefail
+        python3 "$TOOLS_ROOT/helpers/source_policy.py" setup
+        python3 "$TOOLS_ROOT/helpers/source_policy.py" workflows
     - name: Record tested integration identity
       if: github.event_name == 'pull_request'
       env:
