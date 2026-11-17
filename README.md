@@ -1,4 +1,4 @@
-<!-- Generated from private documentation source. Do not edit directly. Source SHA256: 0ddd4d2565e643b773e172d73025eb08dd3dd75d7e7059fe9b4b62cec0c39423 -->
+<!-- Generated from private documentation source. Do not edit directly. Source SHA256: 11bfb6934762792d5cd636473fece2515519d8f80d4ec90beda72f212c7dc444 -->
 
 # ghenv-actions
 
@@ -20,7 +20,7 @@ action runs in the project's GitHub Actions job and uploads only ciphertext.
 
 1. Select the existing `Preview` environment, or use the explicit repository development-bundle mode below.
 2. Select only the development values to export, using one of the examples below.
-3. Copy [examples/ghenv.yml](examples/ghenv.yml) to `.github/workflows/ghenv.yml`
+3. Copy [examples/preview-handoff.yml](examples/preview-handoff.yml) to `.github/workflows/preview-handoff.yml`
    in that project. Replace `FULL_ACTION_COMMIT_SHA` with a reviewed action
    commit. For environment-backed values, keep the job fixed to `environment: Preview`.
 4. Install the workflow on the project's default branch for normal use, then run:
