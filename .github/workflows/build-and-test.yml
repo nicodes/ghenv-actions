@@ -10,6 +10,9 @@ name: Build and test
     branches:
     - main
   workflow_dispatch: null
+  merge_group:
+    types:
+    - checks_requested
 permissions:
   contents: read
   attestations: read
@@ -25,11 +28,15 @@ jobs:
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
         persist-credentials: false
+        fetch-depth: ${{ github.event.repository.private && 1 || 0 }}
     - name: Set up development tools
-      uses: nicodes/tools/setup@71540eb673ebd47162de3b78bb6ffbf77605d2ab
+      uses: nicodes/tools/setup@48fb94fd811c3594489aa3af34f94903cfdb48f7
       env:
         GH_TOKEN: ${{ github.token }}
       timeout-minutes: 5
+    - name: Check documentation boundary and public history
+      uses: nicodes/tools/documentation-policy@48fb94fd811c3594489aa3af34f94903cfdb48f7
+      timeout-minutes: 3
     - name: Check workflow names
       timeout-minutes: 3
       shell: bash
@@ -39,12 +46,12 @@ jobs:
         python3 "$TOOLS_ROOT/helpers/source_policy.py" workflows
         .artifacts/sdk/source-policy/bin/python -I .github/scripts/check-workflow-examples.py
     - name: Record tested integration identity
-      if: github.event_name == 'pull_request'
+      if: (github.event_name == 'pull_request') && github.event_name != 'merge_group'
       env:
         EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
       run: python3 "$TOOLS_ROOT/helpers/integration-identity.py"
     - name: Upload artifacts
-      if: github.event_name == 'pull_request'
+      if: (github.event_name == 'pull_request') && github.event_name != 'merge_group'
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
       with:
         name: fleet-integration-${{ github.run_id }}-${{ github.run_attempt }}
@@ -116,6 +123,26 @@ jobs:
     timeout-minutes: 15
     env:
       MISE_GITHUB_TOKEN: ${{ github.token }}
+  build-test:
+    name: Build and test
+    if: ${{ always() }}
+    needs:
+    - ci
+    runs-on: ubuntu-24.04
+    timeout-minutes: 1
+    permissions: {}
+    steps:
+    - name: Require every native check and documentation policy
+      env:
+        RESULTS: ${{ toJSON(needs) }}
+      run: |
+        python3 -I -B - <<'PY'
+        import json,os,sys
+        results=json.loads(os.environ["RESULTS"])
+        expected=set(['ci'])
+        if set(results)!=expected or any(v.get("result")!="success" for v in results.values()):
+            sys.exit("Every required native check must succeed")
+        PY
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
