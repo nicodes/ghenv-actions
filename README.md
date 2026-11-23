@@ -1,4 +1,4 @@
-<!-- Generated from private documentation source. Do not edit directly. Source SHA256: fd9ba2a41c5865d883bed4059cd609a2f9fc751634a1c110af0133ac5e2d08b7 -->
+<!-- Generated from private documentation source. Do not edit directly. Source SHA256: 888e23bdccb9296193c0fa4c42007325a76966a5bcf93198e2c5998bc35baec3 -->
 
 # ghenv-actions
 
@@ -20,13 +20,13 @@ action runs in the project's GitHub Actions job and uploads only ciphertext.
 
 1. Select the existing `Preview` environment, or use the explicit repository development-bundle mode below.
 2. Select only the development values to export, using one of the examples below.
-3. Copy [examples/preview-handoff.yml](examples/preview-handoff.yml) to `.github/workflows/preview-handoff.yml`
+3. Copy [examples/pr-preview.yml](examples/pr-preview.yml) to `.github/workflows/pr-preview.yml`
    in that project. Every alternative example below uses this same installed filename. Replace `FULL_ACTION_COMMIT_SHA` with a reviewed action
    commit. For environment-backed values, keep the job fixed to `environment: Preview`.
-4. Install the workflow on the project's default branch for normal use, then run:
+4. Install the workflow on `main`, then run:
 
 ```sh
-ghenv run --repo OWNER/PROJECT --secrets API_KEY --vars API_BASE_URL -- npm run dev
+ghenv run --repo OWNER/PROJECT --workflow pr-preview.yml --secrets API_KEY --vars API_BASE_URL -- npm run dev
 ```
 
 No checkout of application code is needed in the handoff job. The action builds
@@ -41,7 +41,7 @@ The local CLI needs Actions read/write for dispatch and artifact deletion.
 
 ## Existing Preview entries
 
-[examples/existing-preview/preview-handoff.yml](examples/existing-preview/preview-handoff.yml) reuses
+[examples/existing-preview/pr-preview.yml](examples/existing-preview/pr-preview.yml) reuses
 individual secrets and variables from an existing `Preview` environment. The
 workflow constructs the versioned bundle in memory with `format` and `toJSON`
 for each explicitly named value. JSON escaping preserves quotes, newlines and
@@ -58,7 +58,7 @@ backup, production database or production provider credentials in the allowlist.
 ## Repository development-bundle mode
 
 GitHub Free does not support environment secrets in private repositories.
-[examples/repository-bundle/preview-handoff.yml](examples/repository-bundle/preview-handoff.yml)
+[examples/repository-bundle/pr-preview.yml](examples/repository-bundle/pr-preview.yml)
 therefore omits the job's GitHub environment and consumes a repository-level
 `GHENV_PREVIEW_BUNDLE` reserved for development. Its logical environment remains
 `Preview`; this mode does not provide GitHub environment approval protection.
