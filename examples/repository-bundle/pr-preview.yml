@@ -1,4 +1,4 @@
-name: Preview handoff
+name: PR preview
 on:
   workflow_dispatch:
     inputs:
@@ -21,6 +21,7 @@ permissions:
   contents: read
 jobs:
   handoff:
+    if: github.ref == 'refs/heads/main'
     name: Export
     runs-on: ubuntu-latest
     timeout-minutes: 10
