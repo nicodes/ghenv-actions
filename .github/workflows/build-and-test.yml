@@ -35,7 +35,7 @@ jobs:
         GH_TOKEN: ${{ github.token }}
       timeout-minutes: 5
     - name: Check documentation boundary and public history
-      uses: nicodes/tools/documentation-policy@48fb94fd811c3594489aa3af34f94903cfdb48f7
+      uses: nicodes/tools/documentation-policy@2e28c8dacc76b1c7b0044e6dffadf261e232bc1d
       timeout-minutes: 3
     - name: Check workflow names
       timeout-minutes: 3
